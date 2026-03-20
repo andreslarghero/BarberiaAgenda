@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+model User {
+  id           Int       @id @default(autoincrement()) @map("id")
+  fullName     String    @map("full_name")
+  email        String    @unique @map("email")
+  passwordHash String    @map("password_hash")
+  role         UserRole  @default(ADMIN) @map("role")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  appointments Appointment[] @relation("AppointmentCreatedBy")
+
+  @@map("users")
+}
+
+model Barber {
+  id          Int      @id @default(autoincrement()) @map("id")
+  fullName    String   @map("full_name")
+  phone       String?  @map("phone")
+  email       String?  @unique @map("email")
+  notes       String?  @map("notes")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  appointments Appointment[]
+  schedules    BarberSchedule[]
+  blockedTimes BlockedTime[]
+
+  @@map("barbers")
+}
+
+model Client {
+  id           Int      @id @default(autoincrement()) @map("id")
+  fullName     String   @map("full_name")
+  phone        String   @map("phone")
+  email        String?  @unique @map("email")
+  notes        String?  @map("notes")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  appointments Appointment[]
+
+  @@map("clients")
+}
+
+model Service {
+  id           Int      @id @default(autoincrement()) @map("id")
+  name         String   @unique @map("name")
+  description  String?  @map("description")
+  durationMin  Int      @map("duration_min")
+  price        Decimal  @db.Decimal(10, 2) @map("price")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id           Int               @id @default(autoincrement()) @map("id")
+  barberId     Int               @map("barber_id")
+  clientId     Int               @map("client_id")
+  serviceId    Int               @map("service_id")
+  createdById  Int               @map("created_by_id")
+  startsAt     DateTime          @map("starts_at")
+  endsAt       DateTime          @map("ends_at")
+  status       AppointmentStatus @default(PENDING) @map("status")
+  notes        String?           @map("notes")
+  cancelReason String?           @map("cancel_reason")
+  cancelledAt  DateTime?         @map("cancelled_at")
+  completedAt  DateTime?         @map("completed_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  barber    Barber  @relation(fields: [barberId], references: [id], onDelete: Restrict)
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@map("appointments")
+}
+
+model BarberSchedule {
+  id           Int      @id @default(autoincrement()) @map("id")
+  barberId     Int      @map("barber_id")
+  dayOfWeek    Int      @map("day_of_week")
+  startTime    String   @map("start_time")
+  endTime      String   @map("end_time")
+  isWorkingDay Boolean  @default(true) @map("is_working_day")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@map("barber_schedules")
+}
+
+model BlockedTime {
+  id          Int      @id @default(autoincrement()) @map("id")
+  barberId    Int      @map("barber_id")
+  startsAt    DateTime @map("starts_at")
+  endsAt      DateTime @map("ends_at")
+  reason      String?  @map("reason")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@map("blocked_times")
+}

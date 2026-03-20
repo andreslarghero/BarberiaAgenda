@@ -1,0 +1,278 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Agenda Barbería API",
+  "dateExported": "2026-03-20T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "fld_auth",
+      "name": "AUTH",
+      "containerId": "",
+      "created": "2026-03-20T00:00:00.000Z",
+      "sortNum": 10000
+    },
+    {
+      "_id": "fld_services",
+      "name": "SERVICES",
+      "containerId": "",
+      "created": "2026-03-20T00:00:00.000Z",
+      "sortNum": 20000
+    },
+    {
+      "_id": "fld_barbers",
+      "name": "BARBERS",
+      "containerId": "",
+      "created": "2026-03-20T00:00:00.000Z",
+      "sortNum": 30000
+    },
+    {
+      "_id": "fld_clients",
+      "name": "CLIENTS",
+      "containerId": "",
+      "created": "2026-03-20T00:00:00.000Z",
+      "sortNum": 40000
+    },
+    {
+      "_id": "fld_appointments",
+      "name": "APPOINTMENTS",
+      "containerId": "",
+      "created": "2026-03-20T00:00:00.000Z",
+      "sortNum": 50000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req_auth_login",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_auth",
+      "name": "POST Login",
+      "url": "{{baseUrl}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 10000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"admin@agendabarberia.com\",\n  \"password\": \"123456\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_services_get",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_services",
+      "name": "GET Services",
+      "url": "{{baseUrl}}/api/services",
+      "method": "GET",
+      "sortNum": 11000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_services_post",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_services",
+      "name": "POST Services",
+      "url": "{{baseUrl}}/api/services",
+      "method": "POST",
+      "sortNum": 12000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Corte Clasico\",\n  \"description\": \"Corte tradicional\",\n  \"durationMinutes\": 30,\n  \"price\": 8000\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_barbers_get",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_barbers",
+      "name": "GET Barbers",
+      "url": "{{baseUrl}}/api/barbers",
+      "method": "GET",
+      "sortNum": 13000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_barbers_post",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_barbers",
+      "name": "POST Barbers",
+      "url": "{{baseUrl}}/api/barbers",
+      "method": "POST",
+      "sortNum": 14000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Barbero Demo\",\n  \"phone\": \"1122334455\",\n  \"email\": \"barber.demo@agendabarberia.com\",\n  \"notes\": \"Especialista en fade\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_clients_get",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_clients",
+      "name": "GET Clients",
+      "url": "{{baseUrl}}/api/clients",
+      "method": "GET",
+      "sortNum": 15000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_clients_post",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_clients",
+      "name": "POST Clients",
+      "url": "{{baseUrl}}/api/clients",
+      "method": "POST",
+      "sortNum": 16000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Cliente Demo\",\n  \"phone\": \"1199988877\",\n  \"email\": \"cliente.demo@agendabarberia.com\",\n  \"notes\": \"Prefiere turno por la tarde\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_appointments_get",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_appointments",
+      "name": "GET Appointments",
+      "url": "{{baseUrl}}/api/appointments",
+      "method": "GET",
+      "sortNum": 17000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "none",
+        "raw": "",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_appointments_post",
+      "colId": "Agenda Barbería API",
+      "containerId": "fld_appointments",
+      "name": "POST Appointments",
+      "url": "{{baseUrl}}/api/appointments",
+      "method": "POST",
+      "sortNum": 18000,
+      "created": "2026-03-20T00:00:00.000Z",
+      "modified": "2026-03-20T00:00:00.000Z",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"clientId\": 1,\n  \"barberId\": 1,\n  \"serviceId\": 1,\n  \"startDatetime\": \"2026-03-21T15:00:00.000Z\",\n  \"notes\": \"Turno de prueba desde Thunder Client\"\n}",
+        "form": []
+      },
+      "tests": []
+    }
+  ],
+  "ref": "thunder-client-generated"
+}
