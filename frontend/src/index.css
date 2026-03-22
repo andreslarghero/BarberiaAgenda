@@ -170,6 +170,27 @@ select {
   font-size: 14px;
 }
 
+.success {
+  margin-top: 8px;
+  color: #15803d;
+  font-size: 14px;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.btn-danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
