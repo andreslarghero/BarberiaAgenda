@@ -45,6 +45,14 @@ function ClientsPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load(search);
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dispara búsqueda al tipear
+  }, [search]);
+
   const startEdit = (item) => {
     setEditingId(item.id);
     setForm({
@@ -135,9 +143,6 @@ function ClientsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn" type="button" onClick={() => load(search)}>
-          Buscar
-        </button>
         <button className="btn" type="button" onClick={() => { setSearch(""); load(""); }}>
           Ver todos
         </button>

@@ -12,6 +12,33 @@ function toDatetimeLocalValue(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function normalizeBusinessError(err, fallback) {
+  const status = err.response?.status;
+  const raw = (err.response?.data?.message || "").toLowerCase();
+
+  if (status === 409) {
+    if (raw.includes("overlapping")) {
+      return "Ese barbero ya tiene un turno en ese horario. Elegí otro horario.";
+    }
+    if (raw.includes("blocked")) {
+      return "Ese horario está bloqueado para el barbero seleccionado.";
+    }
+    return "No se pudo guardar el turno por conflicto de agenda.";
+  }
+
+  if (raw.includes("outside barber working hours")) {
+    return "El horario está fuera del horario laboral del barbero.";
+  }
+  if (raw.includes("invalid startdatetime")) {
+    return "La fecha y hora de inicio no es válida.";
+  }
+  if (status === 400) {
+    return "No se pudo procesar la solicitud. Revisá los datos del turno.";
+  }
+
+  return fallback;
+}
+
 function AppointmentsPage() {
   const [items, setItems] = useState([]);
   const [services, setServices] = useState([]);
@@ -33,6 +60,7 @@ function AppointmentsPage() {
     startDatetime: "",
     notes: "",
   });
+  const nowLocal = toDatetimeLocalValue(new Date().toISOString());
 
   const emptyFormDefaults = (serviceItems, barberItems, clientItems) => ({
     clientId: clientItems[0]?.id ? String(clientItems[0].id) : "",
@@ -121,14 +149,26 @@ function AppointmentsPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setFormError("");
     setInfo("");
+
+    if (!form.clientId || !form.barberId || !form.serviceId || !form.startDatetime) {
+      setFormError("Completá cliente, barbero, servicio y fecha/hora.");
+      return;
+    }
+
+    const parsedStart = new Date(form.startDatetime);
+    if (Number.isNaN(parsedStart.getTime())) {
+      setFormError("La fecha/hora ingresada no es válida.");
+      return;
+    }
+
+    setSubmitting(true);
     const body = {
       clientId: Number(form.clientId),
       barberId: Number(form.barberId),
       serviceId: Number(form.serviceId),
-      startDatetime: new Date(form.startDatetime).toISOString(),
+      startDatetime: parsedStart.toISOString(),
       notes: form.notes || undefined,
     };
     try {
@@ -144,23 +184,20 @@ function AppointmentsPage() {
       setForm((prev) => ({ ...prev, startDatetime: "", notes: "" }));
       await load();
     } catch (err) {
-      const status = err.response?.status;
-      const m = msg(err, editingId ? "No se pudo actualizar el turno" : "No se pudo crear el turno");
-      if (status === 409) {
-        setFormError(
-          `Superposición u horario no disponible: ${m}`
-        );
-      } else {
-        setFormError(m);
-      }
+      const fallback = editingId ? "No se pudo actualizar el turno." : "No se pudo crear el turno.";
+      setFormError(normalizeBusinessError(err, fallback));
     } finally {
       setSubmitting(false);
     }
   };
 
   const cancelAppointment = async (id) => {
+    const ok = window.confirm("¿Cancelar este turno?");
+    if (!ok) return;
+
     setActingId(id);
     setActionError("");
+    setInfo("");
     try {
       await http.patch(`/api/appointments/${id}/cancel`, { reason: "Cancelado desde UI" });
       if (editingId === id) {
@@ -169,22 +206,28 @@ function AppointmentsPage() {
         setForm(emptyFormDefaults(activeServices, activeBarbers, clients));
         setFormError("");
       }
+      setInfo("Turno cancelado.");
       await load();
     } catch (err) {
-      setActionError(msg(err, "No se pudo cancelar"));
+      setActionError(normalizeBusinessError(err, "No se pudo cancelar el turno."));
     } finally {
       setActingId(null);
     }
   };
 
   const completeAppointment = async (id) => {
+    const ok = window.confirm("¿Marcar este turno como completado?");
+    if (!ok) return;
+
     setActingId(id);
     setActionError("");
+    setInfo("");
     try {
       await http.patch(`/api/appointments/${id}/complete`);
+      setInfo("Turno completado.");
       await load();
     } catch (err) {
-      setActionError(msg(err, "No se pudo completar"));
+      setActionError(normalizeBusinessError(err, "No se pudo completar el turno."));
     } finally {
       setActingId(null);
     }
@@ -246,6 +289,7 @@ function AppointmentsPage() {
           type="datetime-local"
           value={form.startDatetime}
           onChange={(e) => setForm((prev) => ({ ...prev, startDatetime: e.target.value }))}
+          min={editingId ? undefined : nowLocal}
           required
         />
         <input
@@ -286,6 +330,7 @@ function AppointmentsPage() {
                 <th>Cliente</th>
                 <th>Servicio</th>
                 <th>Inicio</th>
+                <th>Fin</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -298,6 +343,7 @@ function AppointmentsPage() {
                   <td>{item.client?.name || item.clientId}</td>
                   <td>{item.service?.name || item.serviceId}</td>
                   <td>{new Date(item.startDatetime).toLocaleString()}</td>
+                  <td>{new Date(item.endDatetime).toLocaleString()}</td>
                   <td>{item.status}</td>
                   <td className="actions-cell">
                     <button
@@ -314,7 +360,7 @@ function AppointmentsPage() {
                       disabled={actingId === item.id || item.status === "CANCELLED" || item.status === "COMPLETED"}
                       onClick={() => cancelAppointment(item.id)}
                     >
-                      Cancelar
+                      {actingId === item.id ? "Procesando..." : "Cancelar"}
                     </button>
                     <button
                       className="btn btn-small"
@@ -322,7 +368,7 @@ function AppointmentsPage() {
                       disabled={actingId === item.id || item.status === "COMPLETED" || item.status === "CANCELLED"}
                       onClick={() => completeAppointment(item.id)}
                     >
-                      Completar
+                      {actingId === item.id ? "Procesando..." : "Completar"}
                     </button>
                   </td>
                 </tr>

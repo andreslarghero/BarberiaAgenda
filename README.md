@@ -179,10 +179,10 @@ Healthcheck:
 
 - `GET http://localhost:3000/health`
 
-## Credenciales seed (admin)
+## Credenciales seed (admin de desarrollo)
 
 - Email: `admin@agendabarberia.com`
-- Password: `Admin1234!`
+- Password: `123456` (solo entorno local de desarrollo)
 
 Si cambiaste el seed, estas credenciales pueden variar.
 
