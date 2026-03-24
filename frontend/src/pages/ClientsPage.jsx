@@ -1,5 +1,7 @@
+import { Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import http from "../api/http";
+import { TableListSkeleton } from "../components/Skeletons";
 
 function msg(err, fallback) {
   return err.response?.data?.message || fallback;
@@ -50,7 +52,6 @@ function ClientsPage() {
       load(search);
     }, 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- dispara búsqueda al tipear
   }, [search]);
 
   const startEdit = (item) => {
@@ -95,13 +96,15 @@ function ClientsPage() {
   };
 
   return (
-    <section className="card">
-      <h2>Clientes</h2>
-      <p className="muted">
-        {editingId
-          ? `Editando cliente #${editingId}. La API actual no expone borrado de clientes.`
-          : "Alta de cliente. Podés buscar por nombre o teléfono abajo."}
-      </p>
+    <section className="card page-shell">
+      <header className="page-header">
+        <h2 className="page-title">Clientes</h2>
+        <p className="page-lead muted">
+          {editingId
+            ? `Editando cliente #${editingId}. La API actual no expone borrado de clientes.`
+            : "Alta de cliente. Podés buscar por nombre o teléfono abajo."}
+        </p>
+      </header>
       <form className="form-grid" onSubmit={onSubmit}>
         <input
           placeholder="Nombre"
@@ -110,7 +113,7 @@ function ClientsPage() {
           required
         />
         <input
-          placeholder="Telefono"
+          placeholder="Teléfono"
           value={form.phone}
           onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
           required
@@ -139,7 +142,7 @@ function ClientsPage() {
       {info && <p className="success">{info}</p>}
       <div className="toolbar">
         <input
-          placeholder="Buscar por nombre o telefono"
+          placeholder="Buscar por nombre o teléfono"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -148,7 +151,7 @@ function ClientsPage() {
         </button>
       </div>
       {loading ? (
-        <p>Cargando...</p>
+        <TableListSkeleton rows={6} columns={6} />
       ) : error && !items.length ? (
         <div>
           <p className="error">{error}</p>
@@ -157,7 +160,17 @@ function ClientsPage() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="muted">Sin clientes para mostrar.</p>
+        <div className="page-empty-block">
+          <Users className="page-empty-visual" size={36} strokeWidth={1.65} aria-hidden />
+          <p className="page-empty-title">
+            {search.trim() ? "No encontramos clientes con ese criterio" : "Todavía no registraste clientes"}
+          </p>
+          <p className="page-empty-text muted">
+            {search.trim()
+              ? "Probá con otro nombre o teléfono, o tocá «Ver todos» para listar la base completa."
+              : "Creá fichas simples con nombre y teléfono para asociarlas a los turnos. Podés hacerlo con el formulario de arriba."}
+          </p>
+        </div>
       ) : (
         <div className="table-wrap">
           <table className="table">
@@ -165,7 +178,7 @@ function ClientsPage() {
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>Telefono</th>
+                <th>Teléfono</th>
                 <th>Email</th>
                 <th>Notas</th>
                 <th>Acciones</th>

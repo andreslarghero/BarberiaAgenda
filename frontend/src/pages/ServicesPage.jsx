@@ -1,5 +1,7 @@
+import { PackageOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import http from "../api/http";
+import { TableListSkeleton } from "../components/Skeletons";
 
 function msg(err, fallback) {
   return err.response?.data?.message || fallback;
@@ -101,13 +103,15 @@ function ServicesPage() {
   };
 
   return (
-    <section className="card">
-      <h2>Servicios</h2>
-      <p className="muted">
-        {editingId
-          ? `Editando servicio #${editingId}. Guardá los cambios o cancelá.`
-          : "Completá el formulario para dar de alta un servicio."}
-      </p>
+    <section className="card page-shell">
+      <header className="page-header">
+        <h2 className="page-title">Servicios</h2>
+        <p className="page-lead muted">
+          {editingId
+            ? `Editando servicio #${editingId}. Guardá los cambios o cancelá.`
+            : "Completá el formulario para dar de alta un servicio."}
+        </p>
+      </header>
       <form className="form-grid" onSubmit={onSubmit}>
         <input
           placeholder="Nombre"
@@ -123,7 +127,7 @@ function ServicesPage() {
         <input
           type="number"
           min="1"
-          placeholder="Duracion (min)"
+          placeholder="Duración (min)"
           value={form.durationMinutes}
           onChange={(e) => setForm((prev) => ({ ...prev, durationMinutes: e.target.value }))}
           required
@@ -149,7 +153,7 @@ function ServicesPage() {
       {formError && <p className="error">{formError}</p>}
       {info && <p className="success">{info}</p>}
       {loading ? (
-        <p>Cargando...</p>
+        <TableListSkeleton rows={7} columns={7} />
       ) : error && !items.length ? (
         <div>
           <p className="error">{error}</p>
@@ -158,7 +162,14 @@ function ServicesPage() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="muted">Sin servicios cargados.</p>
+        <div className="page-empty-block">
+          <PackageOpen className="page-empty-visual" size={36} strokeWidth={1.65} aria-hidden />
+          <p className="page-empty-title">Todavía no hay servicios</p>
+          <p className="page-empty-text muted">
+            Los servicios definen duración y precio de cada corte o tratamiento. Creá el primero con el formulario de
+            arriba para poder agendar turnos con ese tipo de trabajo.
+          </p>
+        </div>
       ) : (
         <div className="table-wrap">
           <table className="table">
@@ -167,7 +178,7 @@ function ServicesPage() {
                 <th>ID</th>
                 <th>Nombre</th>
                 <th>Descripción</th>
-                <th>Duracion</th>
+                <th>Duración</th>
                 <th>Precio</th>
                 <th>Activo</th>
                 <th>Acciones</th>
@@ -181,7 +192,11 @@ function ServicesPage() {
                   <td>{item.description ? item.description.slice(0, 40) + (item.description.length > 40 ? "…" : "") : "—"}</td>
                   <td>{item.durationMinutes} min</td>
                   <td>${item.price}</td>
-                  <td>{item.isActive ? "Si" : "No"}</td>
+                  <td>
+                    <span className={`badge ${item.isActive ? "badge--success" : "badge--neutral"}`}>
+                      {item.isActive ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
                   <td className="actions-cell">
                     <button className="btn btn-small" type="button" onClick={() => startEdit(item)}>
                       Editar

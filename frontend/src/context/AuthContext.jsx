@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
     try {
       const raw = localStorage.getItem("user");
       return raw ? JSON.parse(raw) : null;
-    } catch (_error) {
+    } catch {
       localStorage.removeItem("user");
       return null;
     }
@@ -44,6 +44,7 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook colocado junto al provider
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

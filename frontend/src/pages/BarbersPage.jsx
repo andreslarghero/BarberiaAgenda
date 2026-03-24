@@ -1,5 +1,7 @@
+import { UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import http from "../api/http";
+import { TableListSkeleton } from "../components/Skeletons";
 
 function msg(err, fallback) {
   return err.response?.data?.message || fallback;
@@ -102,13 +104,15 @@ function BarbersPage() {
   };
 
   return (
-    <section className="card">
-      <h2>Barberos</h2>
-      <p className="muted">
-        {editingId
-          ? `Editando barbero #${editingId}. Guardá los cambios o cancelá.`
-          : "Completá el formulario para dar de alta un barbero."}
-      </p>
+    <section className="card page-shell">
+      <header className="page-header">
+        <h2 className="page-title">Barberos</h2>
+        <p className="page-lead muted">
+          {editingId
+            ? `Editando barbero #${editingId}. Guardá los cambios o cancelá.`
+            : "Completá el formulario para dar de alta un barbero."}
+        </p>
+      </header>
       <form className="form-grid" onSubmit={onSubmit}>
         <input
           placeholder="Nombre"
@@ -117,7 +121,7 @@ function BarbersPage() {
           required
         />
         <input
-          placeholder="Telefono"
+          placeholder="Teléfono"
           value={form.phone}
           onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
         />
@@ -144,7 +148,7 @@ function BarbersPage() {
       {formError && <p className="error">{formError}</p>}
       {info && <p className="success">{info}</p>}
       {loading ? (
-        <p>Cargando...</p>
+        <TableListSkeleton rows={6} columns={6} />
       ) : error && !items.length ? (
         <div>
           <p className="error">{error}</p>
@@ -153,7 +157,14 @@ function BarbersPage() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="muted">Sin barberos cargados.</p>
+        <div className="page-empty-block">
+          <UserCircle className="page-empty-visual" size={36} strokeWidth={1.65} aria-hidden />
+          <p className="page-empty-title">Sumá al primer barbero</p>
+          <p className="page-empty-text muted">
+            Sin barberos activos no podés asignar turnos en la agenda. Usá el formulario de arriba para dar de alta al
+            equipo con nombre y datos de contacto.
+          </p>
+        </div>
       ) : (
         <div className="table-wrap">
           <table className="table">
@@ -161,7 +172,7 @@ function BarbersPage() {
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>Telefono</th>
+                <th>Teléfono</th>
                 <th>Email</th>
                 <th>Activo</th>
                 <th>Acciones</th>
@@ -174,7 +185,11 @@ function BarbersPage() {
                   <td>{item.name}</td>
                   <td>{item.phone || "-"}</td>
                   <td>{item.email || "-"}</td>
-                  <td>{item.isActive ? "Si" : "No"}</td>
+                  <td>
+                    <span className={`badge ${item.isActive ? "badge--success" : "badge--neutral"}`}>
+                      {item.isActive ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
                   <td className="actions-cell">
                     <button className="btn btn-small" type="button" onClick={() => startEdit(item)}>
                       Editar

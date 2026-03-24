@@ -1,14 +1,32 @@
 const express = require("express");
 const cors = require("cors");
 const routes = require("./routes");
+const { env } = require("./config/env");
 const { notFoundMiddleware } = require("./middlewares/not-found.middleware");
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
 const app = express();
 
+const allowedOrigins = env.CLIENT_ORIGIN.split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+if (!allowedOrigins.length) {
+  allowedOrigins.push("http://localhost:5173");
+}
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin(origin, callback) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
