@@ -9,6 +9,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import http from "../api/http";
 import { AgendaBoardSkeleton, AgendaTimelineSkeleton } from "../components/Skeletons";
 
@@ -128,6 +129,12 @@ function buildSegments(dateStr, availability, dayItems) {
     start: new Date(b.startDatetime),
     end: new Date(b.endDatetime),
   }));
+  const workingBlocks = schedules.map((s) => ({
+    startMin: hhmmToMinutes(s.startTime),
+    endMin: hhmmToMinutes(s.endTime),
+  }));
+  const hasWorkingBlocks = workingBlocks.length > 0;
+  const noWorkingScheduleConfigured = !hasWorkingBlocks;
   const appointments = [...dayItems].sort(
     (a, b) => new Date(a.startDatetime) - new Date(b.startDatetime)
   );
@@ -170,7 +177,12 @@ function buildSegments(dateStr, availability, dayItems) {
     }
 
     const blockHit = blocked.some((b) => b.start < slotEnd && b.end > slotStart);
-    if (blockHit) {
+    const slotStartMin = slotStart.getHours() * 60 + slotStart.getMinutes();
+    const slotEndMin = slotEnd.getHours() * 60 + slotEnd.getMinutes();
+    const insideWorkingBlock = workingBlocks.some(
+      (wb) => slotStartMin >= wb.startMin && slotEndMin <= wb.endMin
+    );
+    if (blockHit || noWorkingScheduleConfigured || (hasWorkingBlocks && !insideWorkingBlock)) {
       segments.push({
         type: "blocked",
         span: 1,
@@ -195,6 +207,7 @@ function AppointmentsPage() {
   const [agendaLoading, setAgendaLoading] = useState(false);
   const [agendaError, setAgendaError] = useState("");
   const [selectedSlotMin, setSelectedSlotMin] = useState(null);
+  const [pendingSlotMin, setPendingSlotMin] = useState(null);
 
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
@@ -350,6 +363,7 @@ function AppointmentsPage() {
     editingIdRef.current = null;
     setEditingId(null);
     setSelectedSlotMin(null);
+    setPendingSlotMin(null);
     setForm(emptyFormDefaults(activeServices, activeBarbers, clients, agendaBarberId));
     setFormError("");
   };
@@ -372,14 +386,11 @@ function AppointmentsPage() {
     setInfo("");
     setActionError("");
     setSelectedSlotMin(null);
+    setPendingSlotMin(null);
   };
 
-  const pickFreeSlot = (cursorMin) => {
+  const applyPickedSlot = (cursorMin) => {
     if (!clients.length || !activeBarbers.length || !activeServices.length) return;
-    if (editingId) {
-      window.alert("Guardá o cancelá la edición del turno antes de elegir un horario nuevo.");
-      return;
-    }
     if (!agendaBarberId) return;
     const start = localDateAtMinutes(agendaDate, cursorMin);
     if (start.getTime() < Date.now()) {
@@ -400,6 +411,28 @@ function AppointmentsPage() {
     requestAnimationFrame(() => {
       formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const pickFreeSlot = (cursorMin) => {
+    if (!clients.length || !activeBarbers.length || !activeServices.length) return;
+    if (editingId) {
+      window.alert("Guardá o cancelá la edición del turno antes de elegir un horario nuevo.");
+      return;
+    }
+    setPendingSlotMin(cursorMin);
+    setFormError("");
+    setInfo("");
+    setActionError("");
+  };
+
+  const confirmPickedSlot = () => {
+    if (pendingSlotMin == null) return;
+    applyPickedSlot(pendingSlotMin);
+    setPendingSlotMin(null);
+  };
+
+  const cancelPickedSlot = () => {
+    setPendingSlotMin(null);
   };
 
   const onSubmit = async (e) => {
@@ -493,6 +526,13 @@ function AppointmentsPage() {
   const missingRefs = !clients.length || !activeBarbers.length || !activeServices.length;
   const todayStr = formatLocalYMD(new Date());
   const { segments } = buildSegments(agendaDate, availability, dayItems);
+  const noWorkingScheduleConfigured =
+    !agendaLoading &&
+    !agendaError &&
+    Boolean(agendaBarberId) &&
+    availability &&
+    Array.isArray(availability.schedules) &&
+    availability.schedules.length === 0;
   const barberName =
     activeBarbers.find((b) => String(b.id) === agendaBarberId)?.name ||
     barbers.find((b) => String(b.id) === agendaBarberId)?.name ||
@@ -596,6 +636,19 @@ function AppointmentsPage() {
 
           {!agendaLoading && !agendaError && agendaBarberId ? (
             <div className="agenda-visual agenda-day-enter" key={`${agendaDate}-${agendaBarberId}`}>
+              {noWorkingScheduleConfigured ? (
+                <div className="agenda-config-warning">
+                  <p className="agenda-config-warning-title">
+                    Este barbero no tiene horario configurado para este día.
+                  </p>
+                  <p className="agenda-config-warning-text">
+                    Cargá la disponibilidad desde Barberos para habilitar reservas en la grilla.
+                  </p>
+                  <Link to="/barbers" className="btn btn-small btn-with-icon">
+                    Ir a Barberos
+                  </Link>
+                </div>
+              ) : null}
               {dayItems.length === 0 ? (
                 <div className="agenda-empty-card agenda-empty-card--polish">
                   <CalendarHeart className="agenda-empty-visual-icon" size={38} strokeWidth={1.65} aria-hidden />
@@ -636,6 +689,24 @@ function AppointmentsPage() {
                 </span>
                 </div>
               </div>
+              {pendingSlotMin != null ? (
+                <div className="agenda-slot-confirm card-inner">
+                  <p className="agenda-slot-confirm-title">
+                    Horario elegido: <strong>{formatSlotLabel(pendingSlotMin)}</strong>
+                  </p>
+                  <p className="muted">
+                    Barbero: <strong>{barberName || "No seleccionado"}</strong>
+                  </p>
+                  <div className="actions-cell">
+                    <button className="btn btn-small btn-primary" type="button" onClick={confirmPickedSlot}>
+                      Confirmar turno
+                    </button>
+                    <button className="btn btn-small" type="button" onClick={cancelPickedSlot}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <div className="agenda-timeline-wrap">
               <div className="agenda-timeline agenda-timeline--premium">
                 <div className="agenda-timeline-head" aria-hidden="true">

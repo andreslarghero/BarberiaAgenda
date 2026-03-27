@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { requireAuth } = require("../../middlewares/auth.middleware");
+const { requireAuth, requireAdmin, requireRoles } = require("../../middlewares/auth.middleware");
 const validate = require("../../middlewares/validate.middleware");
 const serviceController = require("./service.controller");
 const {
@@ -13,17 +13,19 @@ const {
 const router = Router();
 
 router.use(requireAuth);
-router.get("/", validate(listServicesSchema), serviceController.list);
-router.get("/:id", validate(idParamSchema), serviceController.getById);
-router.post("/", validate(createServiceSchema), serviceController.create);
+router.get("/", requireRoles("ADMIN", "BARBER", "CLIENT"), validate(listServicesSchema), serviceController.list);
+router.get("/:id", requireRoles("ADMIN", "BARBER", "CLIENT"), validate(idParamSchema), serviceController.getById);
+router.post("/", requireAdmin, validate(createServiceSchema), serviceController.create);
 router.put(
   "/:id",
+  requireAdmin,
   validate(idParamSchema),
   validate(replaceServiceSchema),
   serviceController.update
 );
 router.patch(
   "/:id/status",
+  requireAdmin,
   validate(idParamSchema),
   validate(updateServiceStatusSchema),
   serviceController.updateStatus

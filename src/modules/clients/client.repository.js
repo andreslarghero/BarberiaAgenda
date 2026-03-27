@@ -41,10 +41,35 @@ function updateById(id, data) {
   });
 }
 
+function findAppointmentHistoryByClientId(clientId) {
+  return prisma.appointment.findMany({
+    where: { clientId },
+    orderBy: { startsAt: "desc" },
+    select: {
+      id: true,
+      startsAt: true,
+      status: true,
+      service: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      barber: {
+        select: {
+          id: true,
+          fullName: true,
+        },
+      },
+    },
+  });
+}
+
 module.exports = {
   findMany,
   findById,
   findByEmail,
   create,
   updateById,
+  findAppointmentHistoryByClientId,
 };

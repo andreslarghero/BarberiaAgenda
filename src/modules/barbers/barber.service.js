@@ -18,8 +18,19 @@ function toResponse(barber) {
   };
 }
 
-async function list(query) {
+async function list(query, authUser) {
+  if (authUser?.role === "BARBER") {
+    if (!authUser.barberId) {
+      throw new ApiError("Barber account is not linked", 403);
+    }
+    const own = await barberRepository.findById(authUser.barberId);
+    return own ? [toResponse(own)] : [];
+  }
+
   const filters = {};
+  if (authUser?.role === "CLIENT") {
+    filters.isActive = true;
+  }
   if (typeof query.isActive === "boolean") {
     filters.isActive = query.isActive;
   }
@@ -28,7 +39,10 @@ async function list(query) {
   return rows.map(toResponse);
 }
 
-async function getById(id) {
+async function getById(id, authUser) {
+  if (authUser?.role === "BARBER" && authUser.barberId !== id) {
+    throw new ApiError("Forbidden", 403);
+  }
   const barber = await barberRepository.findById(id);
   if (!barber) {
     throw new ApiError("Barber not found", 404);

@@ -9,6 +9,8 @@ datasource db {
 
 enum UserRole {
   ADMIN
+  BARBER
+  CLIENT
 }
 
 enum AppointmentStatus {
@@ -25,11 +27,15 @@ model User {
   email        String    @unique @map("email")
   passwordHash String    @map("password_hash")
   role         UserRole  @default(ADMIN) @map("role")
+  barberId     Int?      @unique @map("barber_id")
+  clientId     Int?      @unique @map("client_id")
   isActive     Boolean   @default(true) @map("is_active")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   appointments Appointment[] @relation("AppointmentCreatedBy")
+  barber       Barber?       @relation(fields: [barberId], references: [id], onDelete: SetNull)
+  client       Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@map("users")
 }
@@ -45,6 +51,7 @@ model Barber {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   appointments Appointment[]
+  user         User?
   schedules    BarberSchedule[]
   blockedTimes BlockedTime[]
 
@@ -61,6 +68,7 @@ model Client {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   appointments Appointment[]
+  user         User?
 
   @@map("clients")
 }
@@ -89,6 +97,8 @@ model Appointment {
   startsAt     DateTime          @map("starts_at")
   endsAt       DateTime          @map("ends_at")
   status       AppointmentStatus @default(PENDING) @map("status")
+  reminder24hSent Boolean        @default(false) @map("reminder_24h_sent")
+  reminder2hSent  Boolean        @default(false) @map("reminder_2h_sent")
   notes        String?           @map("notes")
   cancelReason String?           @map("cancel_reason")
   cancelledAt  DateTime?         @map("cancelled_at")
@@ -131,4 +141,15 @@ model BlockedTime {
   barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
 
   @@map("blocked_times")
+}
+
+model BusinessSettings {
+  id                    Int      @id @map("id")
+  businessName          String   @default("Agenda Barberia") @map("business_name")
+  currency              String   @default("ARS") @map("currency")
+  defaultCommissionRate Decimal  @default(0.4) @db.Decimal(5, 4) @map("default_commission_rate")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("business_settings")
 }

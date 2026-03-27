@@ -14,7 +14,13 @@ async function login(payload) {
     throw new ApiError("Invalid credentials", 401);
   }
 
-  const tokenPayload = { id: user.id, email: user.email, role: user.role };
+  const tokenPayload = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    barberId: user.barberId,
+    clientId: user.clientId,
+  };
   const accessToken = signToken(tokenPayload);
 
   return { accessToken, user: tokenPayload };

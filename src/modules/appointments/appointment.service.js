@@ -128,31 +128,78 @@ async function ensureReferencesAndBuildRange({ clientId, barberId, serviceId, st
   return { startDate, endDate };
 }
 
-async function list(query) {
+function ensureAppointmentAccess(appointment, authUser) {
+  if (authUser?.role === "ADMIN") return;
+  if (authUser?.role === "BARBER") {
+    if (!authUser.barberId || appointment.barberId !== authUser.barberId) {
+      throw new ApiError("Forbidden", 403);
+    }
+    return;
+  }
+  if (authUser?.role === "CLIENT") {
+    if (!authUser.clientId || appointment.clientId !== authUser.clientId) {
+      throw new ApiError("Forbidden", 403);
+    }
+    return;
+  }
+  throw new ApiError("Forbidden", 403);
+}
+
+async function list(query, authUser) {
+  const scopedQuery = { ...query };
+  if (authUser?.role === "BARBER") {
+    if (!authUser.barberId) throw new ApiError("Barber account is not linked", 403);
+    scopedQuery.barberId = authUser.barberId;
+  }
+  if (authUser?.role === "CLIENT") {
+    if (!authUser.clientId) throw new ApiError("Client account is not linked", 403);
+    scopedQuery.clientId = authUser.clientId;
+  }
+  if (!["ADMIN", "BARBER", "CLIENT"].includes(authUser?.role || "")) {
+    throw new ApiError("Forbidden", 403);
+  }
+
   const filters = {};
-  if (query.barberId !== undefined) filters.barberId = query.barberId;
-  if (query.clientId !== undefined) filters.clientId = query.clientId;
-  if (query.status !== undefined) filters.status = query.status;
-  if (query.from || query.to) {
+  if (scopedQuery.barberId !== undefined) filters.barberId = scopedQuery.barberId;
+  if (scopedQuery.clientId !== undefined) filters.clientId = scopedQuery.clientId;
+  if (scopedQuery.status !== undefined) filters.status = scopedQuery.status;
+  if (scopedQuery.from || scopedQuery.to) {
     filters.startsAt = {};
-    if (query.from) filters.startsAt.gte = new Date(query.from);
-    if (query.to) filters.startsAt.lte = new Date(query.to);
+    if (scopedQuery.from) filters.startsAt.gte = new Date(scopedQuery.from);
+    if (scopedQuery.to) filters.startsAt.lte = new Date(scopedQuery.to);
   }
 
   const rows = await appointmentRepository.findMany(filters);
   return rows.map(mapAppointment);
 }
 
-async function getById(id) {
+async function getById(id, authUser) {
   const appointment = await appointmentRepository.findById(id);
   if (!appointment) {
     throw new ApiError("Appointment not found", 404);
   }
+  ensureAppointmentAccess(appointment, authUser);
 
   return mapAppointment(appointment);
 }
 
 async function create(payload, authUser) {
+  if (!["ADMIN", "BARBER", "CLIENT"].includes(authUser?.role || "")) {
+    throw new ApiError("Forbidden", 403);
+  }
+  if (authUser.role === "BARBER") {
+    if (!authUser.barberId) throw new ApiError("Barber account is not linked", 403);
+    if (payload.barberId !== authUser.barberId) {
+      throw new ApiError("Forbidden", 403);
+    }
+  }
+  if (authUser.role === "CLIENT") {
+    if (!authUser.clientId) throw new ApiError("Client account is not linked", 403);
+    if (payload.clientId !== authUser.clientId) {
+      throw new ApiError("Forbidden", 403);
+    }
+  }
+
   const { startDate, endDate } = await ensureReferencesAndBuildRange({
     clientId: payload.clientId,
     barberId: payload.barberId,
@@ -174,11 +221,15 @@ async function create(payload, authUser) {
   return mapAppointment(created);
 }
 
-async function update(id, payload) {
+async function update(id, payload, authUser) {
+  if (authUser?.role === "CLIENT") {
+    throw new ApiError("Forbidden", 403);
+  }
   const current = await appointmentRepository.findById(id);
   if (!current) {
     throw new ApiError("Appointment not found", 404);
   }
+  ensureAppointmentAccess(current, authUser);
   if (current.status === "CANCELLED") {
     throw new ApiError("Cancelled appointments cannot be edited", 400);
   }
@@ -203,11 +254,12 @@ async function update(id, payload) {
   return mapAppointment(updated);
 }
 
-async function cancel(id, reason) {
+async function cancel(id, reason, authUser) {
   const current = await appointmentRepository.findById(id);
   if (!current) {
     throw new ApiError("Appointment not found", 404);
   }
+  ensureAppointmentAccess(current, authUser);
   if (current.status === "CANCELLED") {
     throw new ApiError("Appointment is already cancelled", 400);
   }
@@ -224,11 +276,15 @@ async function cancel(id, reason) {
   return mapAppointment(updated);
 }
 
-async function complete(id) {
+async function complete(id, authUser) {
+  if (authUser?.role === "CLIENT") {
+    throw new ApiError("Forbidden", 403);
+  }
   const current = await appointmentRepository.findById(id);
   if (!current) {
     throw new ApiError("Appointment not found", 404);
   }
+  ensureAppointmentAccess(current, authUser);
   if (current.status === "CANCELLED") {
     throw new ApiError("Cancelled appointments cannot be completed", 400);
   }
@@ -244,7 +300,16 @@ async function complete(id) {
   return mapAppointment(updated);
 }
 
-async function getAvailability({ barberId, date }) {
+async function getAvailability({ barberId, date }, authUser) {
+  if (authUser?.role === "BARBER") {
+    if (!authUser.barberId) throw new ApiError("Barber account is not linked", 403);
+    if (barberId !== authUser.barberId) {
+      throw new ApiError("Forbidden", 403);
+    }
+  }
+  if (!["ADMIN", "BARBER", "CLIENT"].includes(authUser?.role || "")) {
+    throw new ApiError("Forbidden", 403);
+  }
   const barber = await appointmentRepository.findBarberById(barberId);
   if (!barber) {
     throw new ApiError("Barber not found", 404);

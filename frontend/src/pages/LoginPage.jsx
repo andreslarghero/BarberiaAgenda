@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function LoginPage() {
@@ -65,6 +65,13 @@ function LoginPage() {
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
           {loading ? "Ingresando…" : "Ingresar"}
         </button>
+        <div className="login-divider" aria-hidden />
+        <Link className="btn btn-block login-booking-link" to="/booking">
+          Reservar turno (clientes)
+        </Link>
+        <p className="login-booking-help muted">
+          Si sos cliente, usá este acceso para entrar directo al flujo de reservas.
+        </p>
       </form>
     </div>
   );

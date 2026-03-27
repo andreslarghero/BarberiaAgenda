@@ -201,3 +201,86 @@ node scripts/smoke-e2e.js
 ## Estado actual
 
 El MVP incluye autenticacion, ABM de barberos/clientes/servicios, gestion de turnos con validaciones de negocio, horarios, bloqueos, y panel frontend para operaciones principales.
+
+## Novedades recientes (actualizacion funcional)
+
+Se sumaron mejoras importantes de negocio, permisos y UX sin romper la arquitectura modular.
+
+### Backend
+
+- **Recordatorios de turnos**:
+  - Campos en `Appointment`: `reminder24hSent`, `reminder2hSent`.
+  - Modulo `reminders` con:
+    - chequeo manual (`npm run reminders:check`)
+    - setup y validacion de pruebas (`reminders:test:setup`, `reminders:test:validate`)
+    - scheduler interno configurable por entorno (`REMINDERS_ENABLED`, `REMINDERS_INTERVAL_MINUTES`)
+    - endpoint admin manual: `POST /api/reminders/check`
+- **Dashboard de negocio** (`/api/dashboard`):
+  - `summary`, `overview`, `commissions`
+  - comparativas y tendencias (hoy/semana/mes vs periodos anteriores)
+  - exportaciones CSV:
+    - `/api/dashboard/export/appointments`
+    - `/api/dashboard/export/summary`
+    - `/api/dashboard/export/commissions`
+- **Historial de cliente**:
+  - `GET /api/clients/:id/history` con metricas basicas.
+- **Configuracion de negocio**:
+  - `GET/PUT /api/settings` (`businessName`, `currency`, `defaultCommissionRate`).
+- **Roles y permisos v1**:
+  - Roles: `ADMIN`, `BARBER`, `CLIENT`.
+  - Scope por rol en barberos/clientes/turnos/disponibilidad.
+  - Modulo admin `users`:
+    - `GET /api/users`
+    - `POST /api/users`
+    - `PATCH /api/users/:id/role`
+    - `PATCH /api/users/:id/link-barber`
+    - `DELETE /api/users/:id`
+  - Hardening:
+    - no se puede eliminar al ultimo ADMIN activo
+    - no se puede degradar el rol del ultimo ADMIN activo
+
+### Frontend
+
+- **Dashboard ampliado**:
+  - ingresos y completados por dia/semana/mes
+  - tendencias y comparativas
+  - bloque de comisiones
+  - exportaciones CSV
+  - selector de fecha (hoy/ayer)
+- **Clientes**:
+  - vista de historial por cliente.
+- **Agenda**:
+  - mejoras visuales, confirmacion de slot y feedback de disponibilidad.
+- **Responsive/mobile**:
+  - adaptacion general de layout
+  - sidebar colapsable en desktop + drawer mobile
+  - tablas mobile tipo card-row en modulos clave.
+- **Booking para clientes**:
+  - nueva ruta `/booking`, separada del panel admin.
+  - flujo guiado: barbero -> servicio -> fecha -> horario -> confirmacion.
+  - acceso directo desde Login: boton "Reservar turno (clientes)".
+- **Usuarios registrados (admin)**:
+  - nueva pagina `/users` solo para ADMIN.
+  - administracion de cuentas existentes: rol, vinculo barbero, eliminacion.
+  - filtros y busqueda frontend:
+    - nombre/email
+    - rol
+    - estado
+    - vinculo de barbero
+
+### Variables de entorno recientes
+
+En `.env` / `.env.example`:
+
+- `REMINDERS_ENABLED=false`
+- `REMINDERS_INTERVAL_MINUTES=5`
+
+### Recomendacion de operacion diaria
+
+- ADMIN:
+  - usa `/users` para gestionar permisos/cuentas.
+  - usa `/settings` para configuracion del negocio.
+- CLIENT:
+  - usa `/booking` para reservar en experiencia simplificada.
+- BARBER:
+  - trabaja en agenda y gestiona su disponibilidad propia.

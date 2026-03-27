@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { requireAuth } = require("../../middlewares/auth.middleware");
+const { requireAuth, requireAdmin } = require("../../middlewares/auth.middleware");
 const validate = require("../../middlewares/validate.middleware");
 const blockedTimeController = require("./blocked-time.controller");
 const {
@@ -12,6 +12,7 @@ const {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireAdmin);
 router.get("/", validate(listBlockedTimesSchema), blockedTimeController.list);
 router.get("/:id", validate(idParamSchema), blockedTimeController.getById);
 router.post("/", validate(createBlockedTimeSchema), blockedTimeController.create);

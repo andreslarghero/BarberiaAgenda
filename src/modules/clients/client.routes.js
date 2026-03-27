@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { requireAuth } = require("../../middlewares/auth.middleware");
+const { requireAuth, requireAdmin, requireRoles } = require("../../middlewares/auth.middleware");
 const validate = require("../../middlewares/validate.middleware");
 const clientController = require("./client.controller");
 const {
@@ -12,11 +12,13 @@ const {
 const router = Router();
 
 router.use(requireAuth);
-router.get("/", validate(listClientsSchema), clientController.list);
-router.get("/:id", validate(idParamSchema), clientController.getById);
-router.post("/", validate(createClientSchema), clientController.create);
+router.get("/", requireRoles("ADMIN", "CLIENT"), validate(listClientsSchema), clientController.list);
+router.get("/:id/history", requireRoles("ADMIN", "CLIENT"), validate(idParamSchema), clientController.history);
+router.get("/:id", requireRoles("ADMIN", "CLIENT"), validate(idParamSchema), clientController.getById);
+router.post("/", requireAdmin, validate(createClientSchema), clientController.create);
 router.put(
   "/:id",
+  requireAdmin,
   validate(idParamSchema),
   validate(replaceClientSchema),
   clientController.update

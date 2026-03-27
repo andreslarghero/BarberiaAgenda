@@ -2,7 +2,7 @@ const barberService = require("./barber.service");
 
 async function list(req, res, next) {
   try {
-    const rows = await barberService.list(req.query);
+    const rows = await barberService.list(req.query, req.user);
     res.status(200).json(rows);
   } catch (error) {
     next(error);
@@ -11,7 +11,7 @@ async function list(req, res, next) {
 
 async function getById(req, res, next) {
   try {
-    const row = await barberService.getById(Number(req.params.id));
+    const row = await barberService.getById(Number(req.params.id), req.user);
     res.status(200).json(row);
   } catch (error) {
     next(error);

@@ -1,5 +1,10 @@
 const { Router } = require("express");
-const { requireAuth } = require("../../middlewares/auth.middleware");
+const {
+  requireAuth,
+  requireAdmin,
+  requireRoles,
+  requireAdminOrSelfBarberParam,
+} = require("../../middlewares/auth.middleware");
 const validate = require("../../middlewares/validate.middleware");
 const barberController = require("./barber.controller");
 const scheduleController = require("../schedules/schedule.controller");
@@ -23,39 +28,45 @@ const {
 const router = Router();
 
 router.use(requireAuth);
-router.get("/", validate(listBarbersSchema), barberController.list);
-router.get("/:id", validate(idParamSchema), barberController.getById);
-router.post("/", validate(createBarberSchema), barberController.create);
+router.get("/", requireRoles("ADMIN", "BARBER", "CLIENT"), validate(listBarbersSchema), barberController.list);
+router.get("/:id", requireRoles("ADMIN", "BARBER", "CLIENT"), validate(idParamSchema), barberController.getById);
+router.post("/", requireAdmin, validate(createBarberSchema), barberController.create);
 router.put(
   "/:id",
+  requireAdmin,
   validate(idParamSchema),
   validate(replaceBarberSchema),
   barberController.update
 );
 router.patch(
   "/:id/status",
+  requireAdmin,
   validate(idParamSchema),
   validate(updateBarberStatusSchema),
   barberController.updateStatus
 );
 router.get(
   "/:barberId/schedules",
+  requireAdminOrSelfBarberParam("barberId"),
   validate(scheduleBarberIdParamSchema),
   scheduleController.listByBarber
 );
 router.post(
   "/:barberId/schedules",
+  requireAdminOrSelfBarberParam("barberId"),
   validate(scheduleBarberIdParamSchema),
   validate(createScheduleForBarberSchema),
   scheduleController.createForBarber
 );
 router.get(
   "/:barberId/blocked-times",
+  requireAdminOrSelfBarberParam("barberId"),
   validate(blockedBarberIdParamSchema),
   blockedTimeController.listByBarber
 );
 router.post(
   "/:barberId/blocked-times",
+  requireAdminOrSelfBarberParam("barberId"),
   validate(blockedBarberIdParamSchema),
   validate(createBlockedTimeForBarberSchema),
   blockedTimeController.createForBarber

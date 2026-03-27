@@ -171,8 +171,8 @@ function ServicesPage() {
           </p>
         </div>
       ) : (
-        <div className="table-wrap">
-          <table className="table">
+        <div className="table-wrap mobile-table-wrap">
+          <table className="table mobile-card-table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -187,17 +187,19 @@ function ServicesPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.id}</td>
-                  <td>{item.name}</td>
-                  <td>{item.description ? item.description.slice(0, 40) + (item.description.length > 40 ? "…" : "") : "—"}</td>
-                  <td>{item.durationMinutes} min</td>
-                  <td>${item.price}</td>
-                  <td>
+                  <td data-label="ID">{item.id}</td>
+                  <td data-label="Nombre">{item.name}</td>
+                  <td data-label="Descripción">
+                    {item.description ? item.description.slice(0, 40) + (item.description.length > 40 ? "…" : "") : "—"}
+                  </td>
+                  <td data-label="Duración">{item.durationMinutes} min</td>
+                  <td data-label="Precio">${item.price}</td>
+                  <td data-label="Activo">
                     <span className={`badge ${item.isActive ? "badge--success" : "badge--neutral"}`}>
                       {item.isActive ? "Activo" : "Inactivo"}
                     </span>
                   </td>
-                  <td className="actions-cell">
+                  <td className="actions-cell" data-label="Acciones">
                     <button className="btn btn-small" type="button" onClick={() => startEdit(item)}>
                       Editar
                     </button>

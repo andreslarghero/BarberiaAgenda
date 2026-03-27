@@ -18,6 +18,8 @@ function requireAuth(req, res, next) {
       id: payload.id,
       email: payload.email,
       role: payload.role,
+      barberId: payload.barberId ?? null,
+      clientId: payload.clientId ?? null,
     };
     return next();
   } catch (_error) {
@@ -25,4 +27,44 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+function requireRoles(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    return next();
+  };
+}
+
+function requireAdmin(req, res, next) {
+  return requireRoles("ADMIN")(req, res, next);
+}
+
+function requireAdminOrSelfBarberParam(paramName = "barberId") {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (req.user.role === "ADMIN") {
+      return next();
+    }
+    if (req.user.role !== "BARBER") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const targetBarberId = Number(req.params[paramName]);
+    if (!targetBarberId || req.user.barberId !== targetBarberId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    return next();
+  };
+}
+
+module.exports = {
+  requireAuth,
+  requireRoles,
+  requireAdmin,
+  requireAdminOrSelfBarberParam,
+};

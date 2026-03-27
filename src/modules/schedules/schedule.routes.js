@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { requireAuth } = require("../../middlewares/auth.middleware");
+const { requireAuth, requireAdmin } = require("../../middlewares/auth.middleware");
 const validate = require("../../middlewares/validate.middleware");
 const scheduleController = require("./schedule.controller");
 const {
@@ -13,6 +13,7 @@ const {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireAdmin);
 router.get("/", validate(listSchedulesSchema), scheduleController.list);
 router.get("/:id", validate(idParamSchema), scheduleController.getById);
 router.post("/", validate(createScheduleSchema), scheduleController.create);

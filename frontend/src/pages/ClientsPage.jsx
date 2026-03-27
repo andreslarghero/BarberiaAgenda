@@ -22,6 +22,11 @@ function ClientsPage() {
     email: "",
     notes: "",
   });
+  const [historyClient, setHistoryClient] = useState(null);
+  const [historyItems, setHistoryItems] = useState([]);
+  const [historyMetrics, setHistoryMetrics] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
 
   const resetForm = () => {
     setForm({ name: "", phone: "", email: "", notes: "" });
@@ -95,6 +100,41 @@ function ClientsPage() {
     }
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return "—";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "—";
+    return new Intl.DateTimeFormat("es-AR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(parsed);
+  };
+
+  const loadHistory = async (client) => {
+    setHistoryLoading(true);
+    setHistoryError("");
+    setHistoryClient(client);
+    try {
+      const { data } = await http.get(`/api/clients/${client.id}/history`);
+      setHistoryItems(Array.isArray(data?.appointments) ? data.appointments : []);
+      setHistoryMetrics(data?.metrics || null);
+    } catch (err) {
+      setHistoryError(msg(err, "No se pudo cargar el historial del cliente"));
+      setHistoryItems([]);
+      setHistoryMetrics(null);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const clearHistory = () => {
+    setHistoryClient(null);
+    setHistoryItems([]);
+    setHistoryMetrics(null);
+    setHistoryError("");
+    setHistoryLoading(false);
+  };
+
   return (
     <section className="card page-shell">
       <header className="page-header">
@@ -150,6 +190,60 @@ function ClientsPage() {
           Ver todos
         </button>
       </div>
+      {historyClient ? (
+        <section className="card" style={{ marginBottom: 16 }}>
+          <header className="page-header">
+            <h3 className="page-title">Historial de {historyClient.name}</h3>
+            <p className="page-lead muted">
+              Resumen rápido del cliente y listado de turnos (más recientes primero).
+            </p>
+          </header>
+          <div className="toolbar" style={{ marginBottom: 12 }}>
+            <span className="muted">
+              Total: {historyMetrics?.totalAppointments ?? 0} | Completados: {historyMetrics?.completedAppointments ?? 0} | Última visita:{" "}
+              {formatDateTime(historyMetrics?.latestVisit)}
+            </span>
+            <button className="btn" type="button" onClick={clearHistory}>
+              Cerrar historial
+            </button>
+          </div>
+          {historyLoading ? (
+            <TableListSkeleton rows={4} columns={4} />
+          ) : historyError ? (
+            <div>
+              <p className="error">{historyError}</p>
+              <button className="btn" type="button" onClick={() => loadHistory(historyClient)}>
+                Reintentar
+              </button>
+            </div>
+          ) : historyItems.length === 0 ? (
+            <p className="muted">Este cliente todavía no tiene turnos registrados.</p>
+          ) : (
+            <div className="table-wrap mobile-table-wrap">
+              <table className="table mobile-card-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Servicio</th>
+                    <th>Barbero</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyItems.map((row) => (
+                    <tr key={row.id}>
+                      <td data-label="Fecha">{formatDateTime(row.date)}</td>
+                      <td data-label="Servicio">{row.service?.name || "—"}</td>
+                      <td data-label="Barbero">{row.barber?.name || "—"}</td>
+                      <td data-label="Estado">{row.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ) : null}
       {loading ? (
         <TableListSkeleton rows={6} columns={6} />
       ) : error && !items.length ? (
@@ -172,8 +266,8 @@ function ClientsPage() {
           </p>
         </div>
       ) : (
-        <div className="table-wrap">
-          <table className="table">
+        <div className="table-wrap mobile-table-wrap">
+          <table className="table mobile-card-table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -187,14 +281,22 @@ function ClientsPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.id}</td>
-                  <td>{item.name}</td>
-                  <td>{item.phone}</td>
-                  <td>{item.email || "—"}</td>
-                  <td>{item.notes ? item.notes.slice(0, 30) + (item.notes.length > 30 ? "…" : "") : "—"}</td>
-                  <td>
+                  <td data-label="ID">{item.id}</td>
+                  <td data-label="Nombre">{item.name}</td>
+                  <td data-label="Teléfono">{item.phone}</td>
+                  <td data-label="Email">{item.email || "—"}</td>
+                  <td data-label="Notas">{item.notes ? item.notes.slice(0, 30) + (item.notes.length > 30 ? "…" : "") : "—"}</td>
+                  <td data-label="Acciones">
                     <button className="btn btn-small" type="button" onClick={() => startEdit(item)}>
                       Editar
+                    </button>
+                    <button
+                      className="btn btn-small"
+                      type="button"
+                      onClick={() => loadHistory(item)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      Ver historial
                     </button>
                   </td>
                 </tr>
